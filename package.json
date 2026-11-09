@@ -1,0 +1,87 @@
+{
+  "name": "aiquota-statusbar",
+  "displayName": "aiquota status bar",
+  "description": "Always-visible Claude usage in the status bar, measured by the aiquota CLI (same numbers as Claude Code's Account & usage view).",
+  "version": "0.1.0",
+  "publisher": "go-aiquota",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/go-aiquota/vscode-statusbar.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiquota.showDetail",
+        "title": "aiquota: Show Claude usage detail"
+      },
+      {
+        "command": "aiquota.refresh",
+        "title": "aiquota: Refresh Claude usage now"
+      }
+    ],
+    "configuration": {
+      "title": "aiquota status bar",
+      "properties": {
+        "aiquota.binaryPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Path of the `aiquota` binary (v0.3.0 or newer). Empty means `~/.local/bin/aiquota`."
+        },
+        "aiquota.intervalSeconds": {
+          "type": "number",
+          "default": 60,
+          "minimum": 30,
+          "description": "Seconds between measurements (at least 30: the usage endpoint is not to be hammered)."
+        },
+        "aiquota.cooldownSeconds": {
+          "type": "number",
+          "default": 15,
+          "minimum": 5,
+          "description": "Minimum seconds between two measurements, clicks and refresh commands included."
+        },
+        "aiquota.timeoutSeconds": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "description": "A measurement still running after this long is killed and shown as unknown."
+        },
+        "aiquota.warnPercent": {
+          "type": "number",
+          "default": 75,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Worst window percentage from which the item turns to the warning colour."
+        },
+        "aiquota.criticalPercent": {
+          "type": "number",
+          "default": 90,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Worst window percentage from which the item turns to the error colour."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "node --test \"test/*.test.js\"",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@vscode/vsce": "^3.7.0",
+    "eslint": "^9.39.0",
+    "globals": "^16.0.0"
+  }
+}
