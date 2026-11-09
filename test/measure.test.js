@@ -49,7 +49,7 @@ test('passes the thresholds as arguments and nothing secret', async () => {
       return { kill() {} };
     },
   }).promise;
-  assert.deepEqual(seen.args, ['status', '-o', 'statusbar', '--warn', '75', '--critical', '90', '--bands', '8']);
+  assert.deepEqual(seen.args, ['status', '-o', 'statusbar', '--warn', '75', '--critical', '90', '--bands', '8', '--format-version', '2']);
   assert.equal(seen.opts.killSignal, 'SIGKILL');
   assert.equal(seen.opts.timeout, 1000);
 });
@@ -57,7 +57,7 @@ test('passes the thresholds as arguments and nothing secret', async () => {
 for (const [name, err, stdout, want] of [
   ['missing binary', Object.assign(new Error('x'), { code: 'ENOENT' }), '', 'not found'],
   ['timeout kill', Object.assign(new Error('x'), { killed: true }), '', 'killed'],
-  ['old binary (exit 2)', Object.assign(new Error('x'), { code: 2 }), '', 'v0.4.0'],
+  ['old binary (exit 2)', Object.assign(new Error('x'), { code: 2 }), '', 'v0.5.0'],
   ['garbage stdout', null, 'not json', 'unreadable'],
   ['v1 answer of an old binary', null, '{"version":1,"text":"a","tooltip":"b","level":"ok"}', 'unreadable'],
 ]) {
@@ -72,6 +72,39 @@ for (const [name, err, stdout, want] of [
     assert.ok(it.tooltip.includes('measured 2026-11-09T12:00:00.000Z'));
   });
 }
+
+test('a newer contract version is read for the fields this one knows', () => {
+  const v3 = JSON.stringify({ version: 3, text: 'a', tooltip: 'b', level: 'ok', items, extra: { x: 1 } });
+  const it = parseItem(v3);
+  assert.deepEqual(Object.keys(it).sort(), ['items', 'level', 'text', 'tooltip']);
+});
+
+test('a poller survives a start that throws and a job that rejects', async () => {
+  const errors = [];
+  const timers = [];
+  let n = 0;
+  const p = createPoller({
+    start: () => {
+      n++;
+      if (n === 1) {
+        throw new Error('config unreadable');
+      }
+      return { kill() {}, promise: Promise.reject(new Error('boom')) };
+    },
+    onItem: () => {},
+    onError: (e) => errors.push(e.message),
+    getConfig: () => ({ intervalMs: 60000, cooldownMs: 0 }),
+    now: () => n * 100000,
+    setTimer: (fn, ms) => { timers.push(ms); return timers.length; },
+    clearTimer: () => {},
+  });
+  assert.equal(p.poll(), false);
+  assert.equal(p.poll(), true);
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(errors, ['config unreadable', 'boom']);
+  assert.equal(p.isRunning(), false);
+  assert.equal(timers.length, 2, 'the timer is re-armed after each failure');
+});
 
 test('parseItem rejects an unknown level', () => {
   assert.equal(parseItem(JSON.stringify({ version: 2, text: 'a', tooltip: 'b', level: 'purple', items })), null);

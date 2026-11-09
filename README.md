@@ -43,7 +43,7 @@ secret passes through the extension.
 
 ## Install
 
-Needs `aiquota` v0.4.0 or newer (the release whose `-o statusbar` carries the colour bands):
+Needs `aiquota` v0.5.0 or newer (`-o statusbar --format-version 2`; the extension asks for the contract version it reads, so a newer binary keeps working):
 
 ```
 GOBIN=~/.local/bin go install github.com/go-aiquota/tray/cmd/aiquota@latest
@@ -67,6 +67,8 @@ It is not published on the Marketplace.
 | `aiquota.cooldownSeconds` | 15 | minimum between two measurements (min 5) |
 | `aiquota.timeoutSeconds` | 30 | a slower measurement is killed |
 | `aiquota.bands` | 8 | colour bands per window, 2 to 8 |
+| `aiquota.statusbar.alignment` | `right` | side of the status bar |
+| `aiquota.statusbar.priority` | 100.5 | base priority; higher is further left. Items take base, base - 0.001, ... so they stay contiguous |
 | `aiquota.warnPercent` / `aiquota.criticalPercent` | 75 / 90 | worst-window level thresholds (tooltip and `level`) |
 
 Commands: `aiquota: Show Claude usage detail`, `aiquota: Refresh Claude usage now`.
