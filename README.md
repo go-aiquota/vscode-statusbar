@@ -26,12 +26,30 @@ is the more saturated one rather than the less bright one. When the usage
 cannot be read it shows a grey `Claude ?` with the reason in the tooltip, never
 a stale number.
 
+## Changing the look: edit Go, `go install`, click
+
+The extension is a frozen, generic renderer. `aiquota status -o statusbar
+--render 1` describes the whole status bar and the extension draws exactly
+that: per item an `id`, `text`, `tooltip`, `color` (hex or a theme colour id),
+`background` (`none`, `warning`, `error`: the only two VS Code allows an
+extension), a `priority` offset, an `alignment` and a click `command`
+(`detail`, `refresh`, `none`); plus a `detail` text and `poll_seconds`. How many
+items, their order, labels, colours, bands, thresholds and the poll interval
+are all decided in Go. To change any of it, edit `aiquota` (go-aiquota/tray),
+`go install` it, and click the item or wait one poll: **no window reload**,
+which matters because a reload restarts the extension host that every
+extension of the window (Claude Code included) shares. The extension keeps
+reading render 1 even when the binary learns a render 2. Settings
+(`aiquota.warnPercent`, `criticalPercent`, `bands`, `intervalSeconds`) are
+passed to the binary only when you set them; otherwise the binary's defaults
+rule. The command "aiquota: Refresh now" re-runs the binary immediately.
+
 ## Design
 
 The extension is a deliberately thin JavaScript shell, because VS Code
 extensions must be JS/TS and the fleet's logic lives in Go. It only runs
 `aiquota status -o statusbar` on an interval and shows the one JSON object it
-prints (`items` with `text`, `band`, `color`, `background`, and a `tooltip`). Reading the credential, the endpoint,
+prints (`items` with `text`, `tooltip`, `color`, `background`, `priority`, `alignment`, `command`). Reading the credential, the endpoint,
 verdicts, thresholds and wording are all in the Go binary, tested there. No
 secret passes through the extension.
 
@@ -43,7 +61,7 @@ secret passes through the extension.
 
 ## Install
 
-Needs `aiquota` v0.5.0 or newer (`-o statusbar --format-version 2`; the extension asks for the contract version it reads, so a newer binary keeps working):
+Needs `aiquota` v0.6.0 or newer (`-o statusbar --render 1`; the extension asks for the render it reads, so a newer binary keeps working):
 
 ```
 GOBIN=~/.local/bin go install github.com/go-aiquota/tray/cmd/aiquota@latest
@@ -67,7 +85,7 @@ It is not published on the Marketplace.
 | `aiquota.cooldownSeconds` | 15 | minimum between two measurements (min 5) |
 | `aiquota.timeoutSeconds` | 30 | a slower measurement is killed |
 | `aiquota.bands` | 8 | colour bands per window, 2 to 8 |
-| `aiquota.statusbar.alignment` | `right` | side of the status bar |
+| `aiquota.statusbar.alignment` | `auto` | side of the status bar (auto: as aiquota describes) |
 | `aiquota.statusbar.priority` | 100.5 | base priority; higher is further left. Items take base, base - 0.001, ... so they stay contiguous |
 | `aiquota.warnPercent` / `aiquota.criticalPercent` | 75 / 90 | worst-window level thresholds (tooltip and `level`) |
 
