@@ -10,13 +10,26 @@
 const { execFile } = require('node:child_process');
 
 const LEVELS = new Set(['ok', 'warn', 'error', 'unknown']);
+const BACKGROUNDS = new Set(['none', 'warning', 'error']);
+const HEX = /^#[0-9A-Fa-f]{6}$/;
+
+// Grey of an unreadable usage; the binary's own unknown item has the same.
+const UNKNOWN_COLOR = '#DADADA';
 
 function unknownItem(reason, at) {
   return {
     text: 'Claude ?',
     level: 'unknown',
     tooltip: `Claude usage unknown\n${reason}\nmeasured ${at.toISOString()}`,
+    items: [{ id: 'unknown', text: 'Claude ?', percent: 0, band: -1, color: UNKNOWN_COLOR, background: 'none' }],
   };
+}
+
+function validItem(i) {
+  return (
+    i && typeof i.id === 'string' && typeof i.text === 'string' && Number.isInteger(i.band) &&
+    typeof i.color === 'string' && HEX.test(i.color) && BACKGROUNDS.has(i.background)
+  );
 }
 
 // parseItem turns the binary's stdout into an item, or null when it is not one.
@@ -27,10 +40,13 @@ function parseItem(stdout) {
   } catch {
     return null;
   }
-  if (!v || v.version !== 1 || typeof v.text !== 'string' || typeof v.tooltip !== 'string' || !LEVELS.has(v.level)) {
+  if (
+    !v || v.version !== 2 || typeof v.text !== 'string' || typeof v.tooltip !== 'string' || !LEVELS.has(v.level) ||
+    !Array.isArray(v.items) || v.items.length === 0 || !v.items.every(validItem)
+  ) {
     return null;
   }
-  return { text: v.text, tooltip: v.tooltip, level: v.level };
+  return { text: v.text, tooltip: v.tooltip, level: v.level, items: v.items };
 }
 
 // measure(opts) -> { promise, kill }. opts: binary, warn, critical, timeoutMs,
@@ -43,7 +59,7 @@ function measure(opts) {
   const promise = new Promise((resolve) => {
     child = run(
       opts.binary,
-      ['status', '-o', 'statusbar', '--warn', String(opts.warn), '--critical', String(opts.critical)],
+      ['status', '-o', 'statusbar', '--warn', String(opts.warn), '--critical', String(opts.critical), '--bands', String(opts.bands)],
       { timeout: opts.timeoutMs, killSignal: 'SIGKILL', maxBuffer: 1 << 20, windowsHide: true, encoding: 'utf8' },
       (err, stdout) => {
         const item = parseItem(stdout || '');
@@ -57,7 +73,7 @@ function measure(opts) {
           return resolve(unknownItem(`aiquota not found at ${opts.binary} (set aiquota.binaryPath)`, now()));
         }
         if (err && typeof err.code === 'number') {
-          return resolve(unknownItem(`aiquota exited ${err.code} without a status bar answer (is it v0.3.0 or newer?)`, now()));
+          return resolve(unknownItem(`aiquota exited ${err.code} without a status bar answer (is it v0.4.0 or newer?)`, now()));
         }
         return resolve(unknownItem(err ? String(err.message || err) : 'unreadable answer from aiquota', now()));
       },

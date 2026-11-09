@@ -2,7 +2,7 @@
   "name": "aiquota-statusbar",
   "displayName": "aiquota status bar",
   "description": "Always-visible Claude usage in the status bar, measured by the aiquota CLI (same numbers as Claude Code's Account & usage view).",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "go-aiquota",
   "license": "BSD-3-Clause",
   "repository": {
@@ -36,7 +36,7 @@
         "aiquota.binaryPath": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Path of the `aiquota` binary (v0.3.0 or newer). Empty means `~/.local/bin/aiquota`."
+          "markdownDescription": "Path of the `aiquota` binary (v0.4.0 or newer). Empty means `~/.local/bin/aiquota`."
         },
         "aiquota.intervalSeconds": {
           "type": "number",
@@ -55,6 +55,13 @@
           "default": 30,
           "minimum": 5,
           "description": "A measurement still running after this long is killed and shown as unknown."
+        },
+        "aiquota.bands": {
+          "type": "number",
+          "default": 8,
+          "minimum": 2,
+          "maximum": 8,
+          "description": "Number of equal colour bands per window (8 = steps of 12.5 %: light green to dark red)."
         },
         "aiquota.warnPercent": {
           "type": "number",
