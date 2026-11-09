@@ -8,23 +8,35 @@ const { measure, parseItem } = require('../src/measure');
 const { createPoller } = require('../src/poller');
 
 const at = new Date('2026-11-09T12:00:00Z');
-const good = JSON.stringify({ version: 1, text: 'Claude 30% · 5%', tooltip: 't', level: 'ok', verdict: 'available' });
+const items = [
+  { id: 'w0', text: 'Claude 5h 30%', percent: 30, band: 2, color: '#FFF59D', background: 'none' },
+  { id: 'w1', text: '7d 80%', percent: 80, band: 6, color: '#FFC9C2', background: 'warning' },
+];
+const good = JSON.stringify({ version: 2, text: 'Claude 30% · 80%', tooltip: 't', level: 'warn', verdict: 'available', items });
 
 // fakeExec calls back as execFile would; err may carry code/killed.
 const fakeExec = (err, stdout) => (_bin, _args, _opts, cb) => {
   setImmediate(() => cb(err, stdout));
   return { kill() {} };
 };
-const base = { binary: '/x/aiquota', warn: 75, critical: 90, timeoutMs: 1000, now: () => at };
+const base = { binary: '/x/aiquota', warn: 75, critical: 90, bands: 8, timeoutMs: 1000, now: () => at };
 
-test('relays the binary item as it is', async () => {
+test('relays the binary items as they are', async () => {
   const it = await measure({ ...base, execFile: fakeExec(null, good) }).promise;
-  assert.deepEqual(it, { text: 'Claude 30% · 5%', tooltip: 't', level: 'ok' });
+  assert.deepEqual(it, { text: 'Claude 30% · 80%', tooltip: 't', level: 'warn', items });
+});
+
+test('rejects an item with a colour that is not a hex or a background it does not know', () => {
+  const bad = (patch) => JSON.stringify({ version: 2, text: 'a', tooltip: 'b', level: 'ok', items: [{ ...items[0], ...patch }] });
+  assert.equal(parseItem(bad({ color: 'red; x' })), null);
+  assert.equal(parseItem(bad({ background: 'statusBar.background' })), null);
+  assert.equal(parseItem(bad({ band: 1.5 })), null);
+  assert.notEqual(parseItem(bad({})), null);
 });
 
 test('exit 1 and 3 still carry an item on stdout', async () => {
   const it = await measure({ ...base, execFile: fakeExec(Object.assign(new Error('x'), { code: 1 }), good) }).promise;
-  assert.equal(it.text, 'Claude 30% · 5%');
+  assert.equal(it.text, 'Claude 30% · 80%');
 });
 
 test('passes the thresholds as arguments and nothing secret', async () => {
@@ -37,7 +49,7 @@ test('passes the thresholds as arguments and nothing secret', async () => {
       return { kill() {} };
     },
   }).promise;
-  assert.deepEqual(seen.args, ['status', '-o', 'statusbar', '--warn', '75', '--critical', '90']);
+  assert.deepEqual(seen.args, ['status', '-o', 'statusbar', '--warn', '75', '--critical', '90', '--bands', '8']);
   assert.equal(seen.opts.killSignal, 'SIGKILL');
   assert.equal(seen.opts.timeout, 1000);
 });
@@ -45,21 +57,24 @@ test('passes the thresholds as arguments and nothing secret', async () => {
 for (const [name, err, stdout, want] of [
   ['missing binary', Object.assign(new Error('x'), { code: 'ENOENT' }), '', 'not found'],
   ['timeout kill', Object.assign(new Error('x'), { killed: true }), '', 'killed'],
-  ['old binary (exit 2)', Object.assign(new Error('x'), { code: 2 }), '', 'v0.3.0'],
+  ['old binary (exit 2)', Object.assign(new Error('x'), { code: 2 }), '', 'v0.4.0'],
   ['garbage stdout', null, 'not json', 'unreadable'],
-  ['wrong version', null, '{"version":2,"text":"a","tooltip":"b","level":"ok"}', 'unreadable'],
+  ['v1 answer of an old binary', null, '{"version":1,"text":"a","tooltip":"b","level":"ok"}', 'unreadable'],
 ]) {
   test(`${name} is Claude ?, never a number`, async () => {
     const it = await measure({ ...base, execFile: fakeExec(err, stdout) }).promise;
     assert.equal(it.text, 'Claude ?');
     assert.equal(it.level, 'unknown');
+    assert.equal(it.items.length, 1);
+    assert.equal(it.items[0].color, '#DADADA');
+    assert.equal(it.items[0].band, -1);
     assert.ok(it.tooltip.includes(want), it.tooltip);
     assert.ok(it.tooltip.includes('measured 2026-11-09T12:00:00.000Z'));
   });
 }
 
 test('parseItem rejects an unknown level', () => {
-  assert.equal(parseItem('{"version":1,"text":"a","tooltip":"b","level":"purple"}'), null);
+  assert.equal(parseItem(JSON.stringify({ version: 2, text: 'a', tooltip: 'b', level: 'purple', items })), null);
 });
 
 // A manual job: resolve() ends it.
