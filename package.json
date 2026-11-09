@@ -2,7 +2,7 @@
   "name": "aiquota-statusbar",
   "displayName": "aiquota status bar",
   "description": "Always-visible Claude usage in the status bar, measured by the aiquota CLI (same numbers as Claude Code's Account & usage view).",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "publisher": "go-aiquota",
   "license": "BSD-3-Clause",
   "repository": {
@@ -27,7 +27,7 @@
       },
       {
         "command": "aiquota.refresh",
-        "title": "aiquota: Refresh Claude usage now"
+        "title": "aiquota: Refresh now"
       }
     ],
     "configuration": {
@@ -36,7 +36,7 @@
         "aiquota.binaryPath": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Path of the `aiquota` binary (v0.5.0 or newer). Empty means `~/.local/bin/aiquota`."
+          "markdownDescription": "Path of the `aiquota` binary (v0.6.0 or newer). Empty means `~/.local/bin/aiquota`."
         },
         "aiquota.intervalSeconds": {
           "type": "number",
@@ -65,14 +65,14 @@
         },
         "aiquota.statusbar.alignment": {
           "type": "string",
-          "enum": ["right", "left"],
-          "default": "right",
-          "description": "Which side of the status bar the items are on."
+          "enum": ["auto", "right", "left"],
+          "default": "auto",
+          "description": "Which side of the status bar the items are on. auto follows what aiquota describes (right)."
         },
         "aiquota.statusbar.priority": {
           "type": "number",
           "default": 100.5,
-          "description": "Base priority of the items (higher is further left within a side). Every item takes this minus a step of 0.001, so they stay contiguous unless another extension picks a priority inside that range."
+          "description": "Base priority of the group (higher is further left within a side). Each item adds the offset aiquota gives it (0 to just under -1), so they stay contiguous unless another extension picks a priority inside that range."
         },
         "aiquota.warnPercent": {
           "type": "number",
