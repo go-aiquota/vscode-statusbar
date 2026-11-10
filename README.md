@@ -6,12 +6,12 @@ Code extension's "Account & usage" view, but visible permanently instead of
 scrolling away.
 
 ```
-Claude 5h 30%   7d 5%        session (5 h), weekly (7 day), each its own item
+Claude 5h 57%   7d 10%   Fable 0%      session (5 h), weekly (7 day), then each other window
 ```
 
 One item per window, coloured by its own band, so the colour tells which window
-is hot; a per-model weekly window (e.g. Fable) appears as a third item once it
-is above zero. Hover for every window, its reset time, the plan and the
+is hot; every other window the provider returns (a per-model weekly window such
+as Sonnet or Fable) is an item too, a 0 % one included. Hover for every window, its reset time, the plan and the
 measurement time. Click to open the detail in the "aiquota" output channel.
 
 The scale has 8 equal steps of 12.5 % (`aiquota.bands` for fewer): light green,
@@ -61,26 +61,169 @@ secret passes through the extension.
 
 ## Install
 
-Needs `aiquota` v0.6.0 or newer (`-o statusbar --render 1`; the extension asks for the render it reads, so a newer binary keeps working):
+Written for someone who uses VS Code and nothing else: no Go, Node or `git`
+needed. Four steps, about ten minutes.
 
-```
-GOBIN=~/.local/bin go install github.com/go-aiquota/tray/cmd/aiquota@latest
+### 1. Prerequisites
+
+- **The Claude Code extension, signed in** in VS Code (or the `claude` CLI,
+  signed in with `/login`). aiquota does not log in to anything: it reads the
+  login Claude Code already keeps, so you see the same account, plan and
+  percentages as Claude Code's "Account & usage" view.
+- **The same operating-system user.** aiquota must run as the user that signed
+  in to Claude Code (the login is in that user's macOS Keychain, or in
+  `~/.claude/.credentials.json` on Linux and Windows, or under
+  `$CLAUDE_CONFIG_DIR`).
+- With **Remote - SSH, WSL or Dev Containers**, install aiquota on the remote
+  machine and sign in to Claude Code there: that is where the extension runs
+  its command.
+- VS Code 1.85 or newer.
+
+### 2. Install aiquota (the command that measures)
+
+The extension only draws what the `aiquota` program prints, and `aiquota`
+starts a second program, `go-aiquota-plugin-claude`, which talks to Claude. Both
+must be installed. Keep the plugin in the same directory as `aiquota`: the
+extension puts that directory first on the PATH of the command it starts, so
+it is found even when VS Code was launched from the Dock or a menu (which have
+a minimal PATH). aiquota v0.8.0 is the first release with prebuilt programs,
+and the extension needs v0.6.0 or newer.
+
+**Prebuilt (no Go).** Open the
+[aiquota releases](https://github.com/go-aiquota/tray/releases/latest) and
+download the archive for your system, plus `SHA256SUMS`:
+
+| System | Archive |
+| --- | --- |
+| macOS, Apple silicon (M1 and later) | `aiquota_<tag>_darwin_arm64.tar.gz` |
+| macOS, Intel | `aiquota_<tag>_darwin_amd64.tar.gz` |
+| Windows (64-bit Intel/AMD, most PCs) | `aiquota_<tag>_windows_amd64.zip` |
+| Windows on ARM | `aiquota_<tag>_windows_arm64.zip` |
+| Linux, Intel/AMD | `aiquota_<tag>_linux_amd64.tar.gz` |
+| Linux, ARM | `aiquota_<tag>_linux_arm64.tar.gz` |
+| FreeBSD, OpenBSD, NetBSD | the same names with `freebsd`, `openbsd` or `netbsd`, `amd64` or `arm64` |
+
+Check the download against `SHA256SUMS` before you run anything from it:
+
+- macOS, in the folder holding both files:
+  `shasum -a 256 -c --ignore-missing SHA256SUMS` (Linux:
+  `sha256sum -c --ignore-missing SHA256SUMS`); it must print `OK` for your
+  archive.
+- Windows (PowerShell): `(Get-FileHash .\aiquota_<tag>_windows_amd64.zip).Hash`
+  and compare it, ignoring case, with the line for that file in `SHA256SUMS`.
+
+Unpack it. It holds `aiquota`, `quotaclaim` (an optional Claude Code hook, not
+needed here), `go-aiquota-plugin-claude` (each `.exe` on Windows) and the
+licence. Put **`aiquota` and `go-aiquota-plugin-claude`** in one folder. With
+`aiquota.binaryPath` empty the extension uses the first `aiquota` it finds in:
+
+| System | Folders searched, in order |
+| --- | --- |
+| macOS, Linux, BSD | `~/.local/bin` (create it: `mkdir -p ~/.local/bin`), `$GOBIN`, `$GOPATH/bin`, `~/go/bin` |
+| Windows | `%USERPROFILE%\.local\bin`, `%GOBIN%`, `%GOPATH%\bin`, `%USERPROFILE%\go\bin`, `%LOCALAPPDATA%\aiquota` |
+
+Example, macOS Apple silicon:
+
+```sh
+mkdir -p ~/.local/bin
+tar -xzf aiquota_<tag>_darwin_arm64.tar.gz
+cp aiquota_<tag>_darwin_arm64/aiquota aiquota_<tag>_darwin_arm64/go-aiquota-plugin-claude ~/.local/bin/
 ```
 
-Download `aiquota-statusbar-<version>.vsix` from the
-[releases](https://github.com/go-aiquota/vscode-statusbar/releases) and run
+Any other folder works: set **`aiquota.binaryPath`** to the full path of the
+`aiquota` file (Settings, `Ctrl+,` or `Cmd+,`, search `aiquota`, "Binary
+Path"), for example `/opt/tools/aiquota` or `C:\Tools\aiquota\aiquota.exe`, and
+keep the plugin beside it.
 
+**macOS Gatekeeper.** A file downloaded with a browser carries a quarantine
+flag, and macOS then refuses to run it ("cannot be opened because the developer
+cannot be verified"). The programs are not notarised by Apple. After checking
+the checksum, clear the flag on the two files you installed:
+
+```sh
+xattr -d com.apple.quarantine ~/.local/bin/aiquota ~/.local/bin/go-aiquota-plugin-claude
 ```
+
+(A download made with `curl -LO` sets no flag, and then the error does not
+appear.)
+
+**With Go instead** (Go 1.27.3 or newer): the same two programs, into
+`~/go/bin` or wherever `GOBIN` points, both searched by the extension:
+
+```sh
+go install github.com/go-aiquota/tray/cmd/aiquota@latest
+go install github.com/go-aiquota/plugin-claude@latest
+```
+
+`go install` names the second program `plugin-claude`: rename it to
+`go-aiquota-plugin-claude` (`.exe` on Windows) in that folder.
+
+**Which systems are tested.** Linux, macOS and Windows are tested by CI on a
+runner of their own. The FreeBSD, OpenBSD and NetBSD binaries are built on every
+change (so a build break shows) but never run by CI: they are untested.
+
+### 3. Install the extension (the .vsix)
+
+It is not on the Marketplace or Open VSX, so you install the file:
+
+1. Download `aiquota-statusbar-<version>.vsix` from the
+   [releases of this repository](https://github.com/go-aiquota/vscode-statusbar/releases/latest).
+2. In VS Code open the **Extensions** view (`Ctrl+Shift+X`, `Cmd+Shift+X` on
+   macOS), click the **`...`** menu at the top right of that view, choose
+   **Install from VSIX...** and pick the downloaded file.
+3. If VS Code offers it, reload the window once.
+
+Or from a terminal, with the `code` command (on macOS first run the Command
+Palette entry "Shell Command: Install 'code' command in PATH"):
+
+```sh
 code --install-extension aiquota-statusbar-<version>.vsix
 ```
 
-It is not published on the Marketplace.
+### 4. Check that it works
+
+1. In a terminal run `aiquota status` (outside the editor use the full path,
+   e.g. `~/.local/bin/aiquota status`, if the shell does not find it). It must
+   print your account, plan and one line per window with a percentage. Exit
+   status 0 is "available", 1 "exhausted", 3 "could not read" (the reason is
+   printed).
+2. In the status bar (bottom right) you see one item per window the account
+   has, for example `Claude 5h 57%`, `7d 10%`, `Fable 0%`. Every window the
+   provider returns is drawn, a 0 % one included, and a window with no value is
+   `Sonnet -`. Hover for every window and its reset time; click for the full
+   text in the "aiquota" output channel (View, Output).
+3. A grey `Claude ?` means "not measured", with the reason in its tooltip:
+   `aiquota not found at <path>` (set `aiquota.binaryPath`),
+   `no go-aiquota-plugin-claude on PATH` (the plugin is not beside `aiquota`),
+   `token expired, open Claude Code` (open Claude Code once: it renews its own
+   login).
+
+### Update, uninstall
+
+- **Update the extension:** install the newer `.vsix` the same way; it replaces
+  the old one. **Update aiquota:** replace the two programs with those of the
+  newer release (or `go install ...@latest` again). A newer `aiquota` changes
+  what the extension draws without a reload: click the item, or wait one poll.
+- **Uninstall:** Extensions view, "aiquota status bar", gear icon,
+  **Uninstall**; then delete the two programs. aiquota also keeps a small
+  reading cache (no credential) under `aiquota` in your user config folder,
+  which you can delete.
+
+### Privacy
+
+The plugin reads Claude Code's login on your machine (macOS Keychain item
+`Claude Code-credentials`, or `~/.claude/.credentials.json` /
+`$CLAUDE_CONFIG_DIR` elsewhere) and sends it only to `api.anthropic.com`
+(`/api/oauth/usage`). It never refreshes, copies or stores the token. The
+extension never sees the credential: it runs `aiquota`, reads the text it
+prints and draws it. It makes no network request of its own and has no
+telemetry.
 
 ## Settings
 
 | Setting | Default | |
 | --- | --- | --- |
-| `aiquota.binaryPath` | `~/.local/bin/aiquota` | path of the binary |
+| `aiquota.binaryPath` | empty: first `aiquota` in `~/.local/bin`, `$GOBIN`, `$GOPATH/bin`, `~/go/bin` (Windows: `aiquota.exe`, plus `%LOCALAPPDATA%\aiquota`) | full path of the binary; `go-aiquota-plugin-claude` beside it |
 | `aiquota.intervalSeconds` | 60 | between measurements (min 30) |
 | `aiquota.cooldownSeconds` | 15 | minimum between two measurements (min 5) |
 | `aiquota.timeoutSeconds` | 30 | a slower measurement is killed |

@@ -14,9 +14,8 @@
 // reason in its tooltip is drawn, and the failure goes to the "aiquota"
 // output channel.
 
-const os = require('node:os');
-const path = require('node:path');
 const vscode = require('vscode');
+const { resolveBinary } = require('./src/binary');
 const { measure } = require('./src/measure');
 const { unknownRender, MIN_POLL } = require('./src/render');
 const { createPoller } = require('./src/poller');
@@ -42,7 +41,7 @@ function config() {
   }
   const interval = userSet(c, 'intervalSeconds');
   return {
-    binary: c.get('binaryPath') || path.join(os.homedir(), '.local', 'bin', 'aiquota'),
+    binary: resolveBinary(c.get('binaryPath')),
     extraArgs,
     userIntervalMs: typeof interval === 'number' ? Math.max(MIN_POLL, interval) * 1000 : null,
     cooldownMs: Math.max(5, c.get('cooldownSeconds', 15)) * 1000,
