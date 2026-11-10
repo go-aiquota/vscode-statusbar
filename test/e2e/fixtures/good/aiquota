@@ -1,0 +1,12 @@
+#!/usr/bin/env node
+'use strict';
+// A fake aiquota: prints a fixed render-1 description, whatever it is asked.
+const item = (id, text, color, priority) => ({ id, text, tooltip: 'fake', color, background: 'none', priority, alignment: 'right', command: 'detail' });
+process.stdout.write(JSON.stringify({
+  render: 1,
+  items: [item('w0', 'Claude 5h 30%', '#B9F6CA', 0), item('w1', '7d 5%', '#B9F6CA', -0.001), item('w2', 'Fable 0%', '#B9F6CA', -0.002)],
+  detail: 'fake detail',
+  poll_seconds: 60,
+  level: 'ok',
+  verdict: 'available',
+}));

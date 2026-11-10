@@ -1,0 +1,8 @@
+{
+  "name": "e2e-dummy",
+  "displayName": "e2e dummy",
+  "version": "0.0.0",
+  "publisher": "go-aiquota-e2e",
+  "engines": { "vscode": "^1.85.0" },
+  "main": "./extension.js"
+}

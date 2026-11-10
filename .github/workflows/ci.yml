@@ -41,3 +41,23 @@ jobs:
         with:
           name: vsix
           path: '*.vsix'
+
+  # The built .vsix, installed with the `code` CLI into a real, pinned VS Code
+  # and started against a fake aiquota: good JSON must draw its items, garbage
+  # must draw the one grey "Claude ?" item (test/e2e/run.js).
+  e2e:
+    name: e2e (VS Code, built .vsix)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run package
+      - uses: actions/cache@v5
+        with:
+          path: .vscode-test
+          key: vscode-1.96.4-${{ runner.os }}
+      - run: xvfb-run -a npm run test:e2e

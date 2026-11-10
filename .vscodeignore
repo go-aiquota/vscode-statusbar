@@ -5,3 +5,5 @@ eslint.config.js
 package-lock.json
 *.vsix
 .gitignore
+test/e2e/**
+.vscode-test/**

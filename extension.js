@@ -64,6 +64,7 @@ function activate(context) {
 
   let current = unknownRender('not measured yet', new Date());
   let pollSeconds = null;
+  let measurements = 0; // finished measurements, for shown()
   const byId = new Map(); // id -> item, for the click
 
   const reconciler = createReconciler({
@@ -119,8 +120,12 @@ function activate(context) {
       const c = config();
       return measure({ binary: c.binary, extraArgs: c.extraArgs, timeoutMs: c.timeoutMs });
     },
-    onItem: showSafely,
+    onItem: (res) => {
+      measurements += 1;
+      showSafely(res);
+    },
     onError: (err) => {
+      measurements += 1;
       log(`measurement failed: ${err && err.stack ? err.stack : err}`);
       showSafely(unknownRender(`extension error: ${err && err.message ? err.message : err}`, new Date()));
     },
@@ -180,6 +185,16 @@ function activate(context) {
     }),
   );
   poller.poll();
+
+  // What the extension has drawn, for the end-to-end test: VS Code has no API
+  // that lets one extension read another's status bar items.
+  return {
+    shown: () => ({
+      measurements,
+      level: current.level,
+      items: current.items.map((i) => ({ id: i.id, text: i.text, color: i.color, background: i.background })),
+    }),
+  };
 }
 
 function deactivate() {}
