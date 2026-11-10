@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+'use strict';
+// A fake aiquota that answers with garbage.
+process.stdout.write('{this is not json');
