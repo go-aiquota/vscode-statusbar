@@ -2,7 +2,7 @@
   "name": "aiquota-statusbar",
   "displayName": "aiquota status bar",
   "description": "Always-visible Claude usage in the status bar, measured by the aiquota CLI (same numbers as Claude Code's Account & usage view).",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "publisher": "go-aiquota",
   "license": "BSD-3-Clause",
   "repository": {
