@@ -2,7 +2,7 @@
   "name": "aiquota-statusbar",
   "displayName": "aiquota status bar",
   "description": "Always-visible Claude usage in the status bar, measured by the aiquota CLI (same numbers as Claude Code's Account & usage view).",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "go-aiquota",
   "license": "BSD-3-Clause",
   "repository": {
@@ -36,7 +36,7 @@
         "aiquota.binaryPath": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Path of the `aiquota` binary (v0.6.0 or newer). Empty means `~/.local/bin/aiquota`."
+          "markdownDescription": "Full path of the `aiquota` binary (v0.6.0 or newer; `aiquota.exe` on Windows). Empty means the first one found in `~/.local/bin`, `$GOBIN`, `$GOPATH/bin`, `~/go/bin` (and `%LOCALAPPDATA%\\\\aiquota` on Windows). `go-aiquota-plugin-claude` must be in the same directory or on your PATH."
         },
         "aiquota.intervalSeconds": {
           "type": "number",

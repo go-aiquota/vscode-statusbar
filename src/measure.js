@@ -9,6 +9,7 @@
 
 const { execFile } = require('node:child_process');
 const { parseRender, unknownRender } = require('./render');
+const { childEnv } = require('./binary');
 
 // measure(opts) -> { promise, kill }. opts: binary, extraArgs (flags the user
 // set explicitly; none by default, so the binary's own defaults rule),
@@ -21,7 +22,7 @@ function measure(opts) {
     child = run(
       opts.binary,
       ['status', '-o', 'statusbar', '--render', '1', ...(opts.extraArgs || [])],
-      { timeout: opts.timeoutMs, killSignal: 'SIGKILL', maxBuffer: 1 << 20, windowsHide: true, encoding: 'utf8' },
+      { timeout: opts.timeoutMs, killSignal: 'SIGKILL', maxBuffer: 1 << 20, windowsHide: true, encoding: 'utf8', env: childEnv(opts.binary) },
       (err, stdout) => {
         const r = parseRender(stdout || '');
         if (r) {
