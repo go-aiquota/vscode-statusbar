@@ -86,8 +86,9 @@ starts a second program, `go-aiquota-plugin-claude`, which talks to Claude. Both
 must be installed. Keep the plugin in the same directory as `aiquota`: the
 extension puts that directory first on the PATH of the command it starts, so
 it is found even when VS Code was launched from the Dock or a menu (which have
-a minimal PATH). aiquota v0.8.0 is the first release with prebuilt programs,
-and the extension needs v0.6.0 or newer.
+a minimal PATH). Prebuilt programs start with aiquota v0.8.0; use v0.8.1 or newer, which also
+finds its plugin in its own folder when you run it by full path in a terminal.
+The extension needs v0.6.0 or newer.
 
 **Prebuilt (no Go).** Open the
 [aiquota releases](https://github.com/go-aiquota/tray/releases/latest) and
