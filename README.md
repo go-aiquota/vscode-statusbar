@@ -11,7 +11,9 @@ Claude 5h 57%   7d 10%   Fable 0%      session (5 h), weekly (7 day), then each 
 
 One item per window, coloured by its own band, so the colour tells which window
 is hot; every other window the provider returns (a per-model weekly window such
-as Sonnet or Fable) is an item too, a 0 % one included. Hover for every window, its reset time, the plan and the
+as Sonnet or Fable) is an item too, a 0 % one included. A window at 100 % shows when it resets in its own item
+(`7d 100% → 2026-11-13 03:00`, local time, 24 h, always with the date; aiquota
+v0.9.0 or newer). Hover for every window, its reset time, the plan and the
 measurement time. Click to open the detail in the "aiquota" output channel.
 
 The scale has 8 equal steps of 12.5 % (`aiquota.bands` for fewer): light green,
@@ -86,7 +88,7 @@ starts a second program, `go-aiquota-plugin-claude`, which talks to Claude. Both
 must be installed. Keep the plugin in the same directory as `aiquota`: the
 extension puts that directory first on the PATH of the command it starts, so
 it is found even when VS Code was launched from the Dock or a menu (which have
-a minimal PATH). Prebuilt programs start with aiquota v0.8.0; use the latest release (v0.8.2 at the time of writing; from v0.8.1 on,
+a minimal PATH). Prebuilt programs start with aiquota v0.8.0; use the latest release (v0.9.0 at the time of writing; from v0.8.1 on,
 `aiquota` also finds its plugin in its own folder when you run it by full path
 in a terminal). The extension (v0.3.2 here) needs aiquota v0.6.0 or newer.
 
