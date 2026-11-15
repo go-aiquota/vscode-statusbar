@@ -64,7 +64,9 @@ secret passes through the extension.
 ## Install
 
 Written for someone who uses VS Code and nothing else: no Go, Node or `git`
-needed. Four steps, about ten minutes.
+needed. Four steps, about ten minutes. The same guide, kept current with the
+releases, is on the
+[documentation site](https://go-aiquota.github.io/docs/main/install/).
 
 ### 1. Prerequisites
 
